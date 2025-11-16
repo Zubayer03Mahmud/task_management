@@ -1,2 +1,0 @@
-GET /task/999: { "error": "Task not found" } (status: 404)
-GET /task/abc: { "error": "Invalid ID format" } (status: 400)
