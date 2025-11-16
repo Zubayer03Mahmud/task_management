@@ -1,48 +1,38 @@
 const express = require('express');
 const router = express.Router();
 
+const tasks = [
+    { id: 1, title: 'Buy groceries', completed: false, priority: 'medium', createdAt: new Date('2025-11-01T10:00:00Z') },
+    { id: 2, title: 'Finish report', completed: true, priority: 'high', createdAt: new Date('2025-11-02T14:30:00Z') },
+    { id: 3, title: 'Walk the dog', completed: false, priority: 'low', createdAt: new Date('2025-11-03T09:15:00Z') },
+    { id: 4, title: 'Call family', completed: true, priority: 'medium', createdAt: new Date('2025-11-04T18:45:00Z') },
+    { id: 5, title: 'Exercise', completed: false, priority: 'high', createdAt: new Date('2025-11-05T07:00:00Z') }
+];
+
 router.get('/tasks', (req, res) => {
-  const tasks = req.app.locals.tasks || [];
-  res.json(tasks);
+    res.json(tasks);
 });
 
-// Keep /task/:id from Lab 1 (with invalid ID handling)
-router.get('/task/:id', (req, res) => {
-  const idParam = req.params.id;
-  const id = parseInt(idParam);
-  if (isNaN(id)) {
-    return res.status(400).json({ error: 'Invalid ID format' });
-  }
-  const tasks = req.app.locals.tasks || [];
-  const task = tasks.find(t => t.id === id);
-  if (task) {
-    res.json(task);
-  } else {
-    res.status(404).json({ error: 'Task not found' });
-  }
-});
-
-router.post('/tasks', (req, res) => {
-  try {
-    const { title, completed, priority } = req.body;
-    if (!title || typeof completed !== 'boolean' || !['low', 'medium', 'high'].includes(priority)) {
-      return res.status(400).json({ error: 'Invalid task data. Required: title (string), completed (boolean), priority (low/medium/high)' });
+// router.get('/tasks/:id', (req, res) => {
+//     const id = parseInt(req.params.id);
+//     const task = tasks.find(t => t.id === id);
+//     if (task) {
+//         res.json(task);
+//     } else {
+//         res.status(404).json({ error: 'Task not found' });
+//     }
+// });
+router.get('/tasks/:id', (req, res) => {  // Changed from '/task/:id'
+    const idParam = req.params.id;
+    const id = parseInt(idParam);
+    if (isNaN(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid ID format' });
     }
-    const tasks = req.app.locals.tasks || [];
-    const newId = tasks.length ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-    const newTask = {
-      id: newId,
-      title,
-      completed,
-      priority,
-      createdAt: new Date()
-    };
-    tasks.push(newTask);
-    req.app.locals.tasks = tasks;  // Update storage
-    res.status(201).json(newTask);
-  } catch (err) {
-    res.status(500).json({ error: 'Server error: ' + err.message });
-  }
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+        res.json(task);
+    } else {
+        res.status(404).json({ error: 'Task not found' });
+    }
 });
-
 module.exports = router;
