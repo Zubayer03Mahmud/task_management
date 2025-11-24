@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
       data: rows
     });
   } catch (err) {
-    console.error(err);  // Update to logger later in point 5
+    logger.error(err);  // Update to logger later in point 5
     res.status(500).json({ error: 'Database error' });
   }
 });
@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
 // const [rows] = await db.query('SELECT * FROM tasks ORDER BY created_at DESC');
 // res.json(rows);
 // } catch (err) {
-// console.error(err);
+// logger.error(err);
 // res.status(500).json({ error: 'Database error' });
 // }
 // });
@@ -76,7 +76,7 @@ const [result] = await db.query(sql, [title, description || null]);
 const [newTask] = await db.query('SELECT * FROM tasks WHERE id = ?', [result.insertId]);
 res.status(201).json(newTask[0]);
 } catch (err) {
-console.error(err);
+logger.error(err);
 res.status(500).json({ error: 'Failed to create task' });
 }
 });
@@ -102,7 +102,7 @@ return res.status(404).json({ error: 'Task not found' });
 const [updated] = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
 res.json(updated[0]);
 } catch (err) {
-console.error(err);
+logger.error(err);
 res.status(500).json({ error: 'Failed to update task' });
 }
 });
@@ -117,7 +117,7 @@ router.delete('/:id', async (req, res) => {
     }
     res.status(204).send();
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ error: 'Failed to delete task' });
   }
 });
@@ -128,7 +128,7 @@ router.get('/deleted', async (req, res) => {
     const [rows] = await db.query('SELECT * FROM tasks WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC');
     res.json(rows);
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ error: 'Database error' });
   }
 });
@@ -144,7 +144,7 @@ router.put('/:id/restore', async (req, res) => {
     const [restored] = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
     res.json(restored[0]);
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ error: 'Failed to restore task' });
   }
 });
@@ -159,7 +159,7 @@ router.put('/:id/restore', async (req, res) => {
 // }
 // res.status(204).send();
 // } catch (err) {
-// console.error(err);
+// logger.error(err);
 // res.status(500).json({ error: 'Failed to delete task' });
 // }
 // });
