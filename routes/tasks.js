@@ -106,19 +106,64 @@ console.error(err);
 res.status(500).json({ error: 'Failed to update task' });
 }
 });
-// DELETE task
+
+// DELETE task (soft delete)
 router.delete('/:id', async (req, res) => {
-const { id } = req.params;
-try {
-const [result] = await db.query('DELETE FROM tasks WHERE id = ?', [id]);
-if (result.affectedRows === 0) {
-return res.status(404).json({ error: 'Task not found' });
-}
-res.status(204).send();
-} catch (err) {
-console.error(err);
-res.status(500).json({ error: 'Failed to delete task' });
-}
+  const { id } = req.params;
+  try {
+    const [result] = await db.query('UPDATE tasks SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete task' });
+  }
 });
+
+// GET deleted tasks
+router.get('/deleted', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM tasks WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC');
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// PUT restore task
+router.put('/:id/restore', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [result] = await db.query('UPDATE tasks SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Task not found or not deleted' });
+    }
+    const [restored] = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
+    res.json(restored[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to restore task' });
+  }
+});
+
+// // DELETE task
+// router.delete('/:id', async (req, res) => {
+// const { id } = req.params;
+// try {
+// const [result] = await db.query('DELETE FROM tasks WHERE id = ?', [id]);
+// if (result.affectedRows === 0) {
+// return res.status(404).json({ error: 'Task not found' });
+// }
+// res.status(204).send();
+// } catch (err) {
+// console.error(err);
+// res.status(500).json({ error: 'Failed to delete task' });
+// }
+// });
+
+
 module.exports = router;
 
