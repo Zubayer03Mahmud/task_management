@@ -1,16 +1,69 @@
+
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
-// GET all tasks
+
+// GET all tasks (with pagination and search)
 router.get('/', async (req, res) => {
-try {
-const [rows] = await db.query('SELECT * FROM tasks ORDER BY created_at DESC');
-res.json(rows);
-} catch (err) {
-console.error(err);
-res.status(500).json({ error: 'Database error' });
-}
+  const { page = 1, limit = 10, q } = req.query;
+  let currentPage = parseInt(page);
+  let currentLimit = parseInt(limit);
+  
+  if (isNaN(currentPage) || currentPage < 1) currentPage = 1;
+  if (isNaN(currentLimit) || currentLimit < 1) currentLimit = 10;
+  if (currentLimit > 50) currentLimit = 50;  // Max limit
+  
+  const offset = (currentPage - 1) * currentLimit;
+  
+  try {
+    // Total count (exclude soft-deleted, include search if q)
+    let countSql = 'SELECT COUNT(*) as total FROM tasks WHERE deleted_at IS NULL';
+    let countValues = [];
+    if (q) {
+      countSql += ' AND LOWER(title) LIKE ?';
+      countValues.push(`%${q.toLowerCase()}%`);
+    }
+    const [[{ total }]] = await db.query(countSql, countValues);
+    
+    const totalTasks = total;
+    const totalPages = Math.ceil(totalTasks / currentLimit);
+
+    // Paginated data
+    let dataSql = 'SELECT * FROM tasks WHERE deleted_at IS NULL';
+    let dataValues = [];
+    if (q) {
+      dataSql += ' AND LOWER(title) LIKE ?';
+      dataValues.push(`%${q.toLowerCase()}%`);
+    }
+    dataSql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    dataValues.push(currentLimit, offset);
+    
+    const [rows] = await db.query(dataSql, dataValues);
+    
+    res.json({
+      totalTasks,
+      totalPages,
+      currentPage,
+      limit: currentLimit,
+      data: rows
+    });
+  } catch (err) {
+    console.error(err);  // Update to logger later in point 5
+    res.status(500).json({ error: 'Database error' });
+  }
 });
+
+
+// // GET all tasks
+// router.get('/', async (req, res) => {
+// try {
+// const [rows] = await db.query('SELECT * FROM tasks ORDER BY created_at DESC');
+// res.json(rows);
+// } catch (err) {
+// console.error(err);
+// res.status(500).json({ error: 'Database error' });
+// }
+// });
 // POST create new task
 router.post('/', async (req, res) => {
 const { title, description } = req.body;
@@ -68,3 +121,4 @@ res.status(500).json({ error: 'Failed to delete task' });
 }
 });
 module.exports = router;
+
